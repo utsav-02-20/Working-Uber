@@ -4,9 +4,8 @@
 /.pnpm-store/
 
 # environment files
-.env*
-!.env.example
-!.env*.example
+.env
+
 
 # logs and debug output
 *.log
