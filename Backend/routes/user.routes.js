@@ -1,10 +1,17 @@
+// routes/user.routes.js
+
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
+const userController = require("../controllers/user.controller.js");
+const authMiddleware = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
-const userController = require("../controllers/user.controller.js");
 
+// ============================
+// Validation Rules for Register
+// ============================
 const registerValidators = [
+
     body("fullname.firstName")
         .trim()
         .notEmpty()
@@ -31,29 +38,56 @@ const registerValidators = [
         .withMessage("Password is required")
         .isLength({ min: 12 })
         .withMessage("Password must be at least 12 characters long")
-        .matches(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{12,}$/
-        )
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{12,}$/)
         .withMessage(
-            "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+            "Password must contain uppercase, lowercase, number and special character"
         )
 ];
 
+// ============================
+// Validation Rules for Login
+// ============================
+const loginValidators = [
+
+    body("email")
+        .trim()
+        .isEmail()
+        .withMessage("Please use a valid email address")
+        .normalizeEmail(),
+
+    body("password")
+        .notEmpty()
+        .withMessage("Password is required")
+];
+
+// ============================
+// Register Route
+// POST /users/register
+// ============================
 router.post(
     "/register",
     registerValidators,
-    (req, res, next) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                errors: errors.array()
-            });
-        }
-
-        next();
-    },
     userController.register
+);
+
+// ============================
+// Login Route
+// POST /users/login
+// ============================
+router.post(
+    "/login",
+    loginValidators,
+    userController.loginUser
+);
+
+// ============================
+// Profile Route
+// GET /users/profile
+// ============================
+router.get(
+    "/profile",
+    authMiddleware.authUser,
+    userController.getProfile
 );
 
 module.exports = router;

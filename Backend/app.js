@@ -3,8 +3,10 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./db/db');
 const userRoutes = require('./routes/user.routes');
+const cookieParser = require('cookie-parser');
 
 const app = express();
+app.use(cookieParser());
 
 
 // Load environment variables
