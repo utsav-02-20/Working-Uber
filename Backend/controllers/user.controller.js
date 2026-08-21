@@ -1,41 +1,78 @@
-const userService = require('../services/user.service.js');
-const { validationResult } = require('express-validator');
+// controllers/user.controller.js
 
-module.exports.register = async (req, res, next) => {
-    const { fullname, email, password } = req.body;
+const userService = require("../services/user.service.js");
+const { validationResult } = require("express-validator");
 
-    // Check validation errors
+// ============================
+// Register User Controller
+// ============================
+module.exports.register = async (req, res) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        return res.status(400).json({
-            errors: errors.array()
-        });
+        return res.status(400).json({ errors: errors.array() });
     }
 
     try {
-        // Hash password
-        const hashPassword = await userService.hashPassword(password);
+        const { fullname, email, password } = req.body;
 
-        // Register user
-        const user = await userService.register({
+        const { user, token } = await userService.register({
             fullname,
             email,
-            password: hashPassword
+            password
         });
 
-        // Generate JWT token
-        const token = user.generateAuthToken();
-
-        // Send ONE response
         return res.status(201).json({
-            message: 'User registered successfully',
-            user,
-            token
+            message: "User registered successfully",
+            token,
+            user
         });
 
     } catch (error) {
-        return res.status(400).json({
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+// ============================
+// Login User Controller
+// ============================
+module.exports.loginUser = async (req, res) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const { email, password } = req.body;
+
+        const { user, token } = await userService.login(email, password);
+
+        return res.status(200).json({
+            message: "Login successful",
+            token,
+            user
+        });
+
+    } catch (error) {
+        return res.status(401).json({ error: error.message });
+    }
+};
+
+// ============================
+// Get User Profile Controller
+// GET /users/profile
+// ============================
+module.exports.getProfile = async (req, res) => {
+    try {
+        // req.user comes from auth.middleware.js
+        return res.status(200).json({
+            message: "User profile retrieved successfully",
+            user: req.user
+        });
+
+    } catch (error) {
+        return res.status(500).json({
             error: error.message
         });
     }

@@ -1,7 +1,12 @@
+// models/user.model.js
+
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// ============================
+// User Schema
+// ============================
 const userSchema = new mongoose.Schema(
     {
         fullname: {
@@ -14,8 +19,8 @@ const userSchema = new mongoose.Schema(
 
             lastName: {
                 type: String,
-                minlength: [3, "Last name must be at least 3 characters long"],
-                trim: true
+                trim: true,
+                minlength: [3, "Last name must be at least 3 characters long"]
             }
         },
 
@@ -25,24 +30,21 @@ const userSchema = new mongoose.Schema(
             unique: true,
             lowercase: true,
             trim: true,
-            match: [
-                /^\S+@\S+\.\S+$/,
-                "Please use a valid email address"
-            ]
+            match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"]
         },
 
         password: {
             type: String,
             required: true,
             minlength: [12, "Password must be at least 12 characters long"],
-            select: false,
+            select: false, // Hide password in queries by default
             match: [
                 /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{12,}$/,
-                "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+                "Password must contain uppercase, lowercase, number and special character"
             ]
         },
 
-        // Track live location/socket connection
+        // Used later for realtime ride updates
         socketId: {
             type: String,
             default: null
@@ -53,26 +55,46 @@ const userSchema = new mongoose.Schema(
     }
 );
 
-// Generate JWT
+// ============================
+// Generate JWT Token
+// ============================
 userSchema.methods.generateAuthToken = function () {
     return jwt.sign(
         { id: this._id },
-        process.env.JWT_SECRET
-        // { expiresIn: "1h" }
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "7d"
+        }
     );
 };
 
-// Compare password
+// ============================
+// Compare Password
+// ============================
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Hash password
+// ============================
+// Hash Password (Static Method)
+// ============================
 userSchema.statics.hashPassword = async function (password) {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
 };
 
-const User = mongoose.model("User", userSchema);
+// ============================
+// Remove sensitive fields from API response
+// ============================
+userSchema.set("toJSON", {
+    transform(doc, ret) {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+    }
+});
 
-module.exports = User;
+// Create model
+const UserModel = mongoose.model("User", userSchema);
+
+module.exports = UserModel;

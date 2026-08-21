@@ -1,34 +1,65 @@
-const UserModel = require('../models/user.model.js');
-const bcrypt = require('bcryptjs');
+// services/user.service.js
 
-module.exports.hashPassword = async (password) => {
-    const salt = await bcrypt.genSalt(10);
-    return await bcrypt.hash(password, salt);
-};
+const UserModel = require("../models/user.model.js");
+
+// ============================
+// Register New User
+// ============================
 module.exports.register = async ({ fullname, email, password }) => {
 
     // Validate required fields
     if (!fullname?.firstName || !email || !password) {
-        throw new Error('Missing required fields');
+        throw new Error("Missing required fields");
     }
 
     // Check if email already exists
     const existingUser = await UserModel.findOne({ email });
 
     if (existingUser) {
-        throw new Error('Email already in use');
+        throw new Error("Email already in use");
     }
 
-    // Create new user
-    const newUser = new UserModel({
+    // Hash password using model static method
+    const hashedPassword = await UserModel.hashPassword(password);
+
+    // Create user
+    const user = await UserModel.create({
         fullname: {
             firstName: fullname.firstName,
             lastName: fullname.lastName
         },
         email,
-        password
+        password: hashedPassword
     });
 
-    // Save user to MongoDB
-    return await newUser.save();
+    // Generate JWT token
+    const token = user.generateAuthToken();
+
+    return { user, token };
 };
+
+// ============================
+// Login Existing User
+// ============================
+module.exports.login = async (email, password) => {
+
+    // Find user and include hidden password field
+    const user = await UserModel.findOne({ email }).select("+password");
+
+    if (!user) {
+        throw new Error("Invalid email or password");
+    }
+
+    // Compare entered password with hashed password
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
+        throw new Error("Invalid email or password");
+    }
+
+    // Generate JWT
+    const token = user.generateAuthToken();
+
+    return { user, token };
+};
+
