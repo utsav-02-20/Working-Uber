@@ -48,10 +48,12 @@ module.exports.loginUser = async (req, res) => {
 
         const { user, token } = await userService.login(email, password);
 
-        return res.status(200).json({
-            message: "Login successful",
-            token,
-            user
+         // Save JWT in cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: false,      // true in production with HTTPS
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
         });
 
     } catch (error) {
@@ -64,6 +66,7 @@ module.exports.loginUser = async (req, res) => {
 // GET /users/profile
 // ============================
 module.exports.getProfile = async (req, res) => {
+
     try {
         // req.user comes from auth.middleware.js
         return res.status(200).json({
