@@ -1,29 +1,47 @@
 const usermodel = require("../models/user.model.js");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const BlacklistToken = require("../models/blacklist.model.js");
 
 module.exports.authUser = async (req, res, next) => {
     try {
-        // Get token from header
-        const token = req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "");
-        // check for token 
-        if(!token) {
-            return res.status(401).json({ error: "Access denied. No token provided." });
+        // Get token from cookie or Authorization header
+        const token =
+            req.cookies?.token ||
+            req.header("Authorization")?.replace("Bearer ", "");
+
+        if (!token) {
+            return res.status(401).json({
+                error: "Access denied. No token provided.",
+            });
         }
 
-        // Verify token
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await usermodel.findById(decoded.id);
-            if (!user) {
-                return res.status(401).json({ error: "User not found." });
-            }
-            req.user = user;
-            return next();
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token." });
+        // Check if token is blacklisted
+        const isBlacklisted = await BlacklistToken.findOne({ token });
+
+        if (isBlacklisted) {
+            return res.status(401).json({
+                error: "Token has been blacklisted. Please login again.",
+            });
         }
+
+        // Verify JWT
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await usermodel.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({
+                error: "User not found.",
+            });
+        }
+
+        req.user = user;
+        req.token = token; // Save token for logout controller
+
+        next();
     } catch (error) {
-        return res.status(401).json({ error: "Invalid token." });
-    } 
-} ; 
+        return res.status(401).json({
+            error: "Invalid or expired token.",
+        });
+    }
+};

@@ -148,3 +148,72 @@ Returns the authenticated user's profile using a valid JWT token.
   "error": "Invalid token."
 }
 ```
+
+# Logout User API
+
+Logs out the authenticated user by **blacklisting the JWT token for 24 hours** and clearing the authentication cookie.
+
+## Endpoint
+
+```http
+POST /user/logout
+```
+
+## Authentication
+
+A valid JWT token is required.
+
+### Option 1: Cookie (Recommended)
+
+The `token` cookie is automatically sent after a successful login.
+
+### Option 2: Authorization Header
+
+```http
+Authorization: Bearer <your_jwt_token>
+```
+
+## Request Body
+
+No request body is required.
+
+## Success Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "message": "Logout successful"
+}
+```
+
+## Error Responses
+
+### 401 Unauthorized
+
+```json
+{
+  "error": "Access denied. No token provided."
+}
+```
+
+```json
+{
+  "error": "Token has been blacklisted. Please login again."
+}
+```
+
+```json
+{
+  "error": "Invalid or expired token."
+}
+```
+
+## What Happens on Logout?
+
+- Reads the JWT token from the cookie or `Authorization` header.
+- Stores the token in the `blacklisttokens` collection.
+- The token is automatically removed after **24 hours** using MongoDB's TTL index.
+- Clears the `token` cookie from the client.
+- Prevents the same token from accessing protected routes again.
+
