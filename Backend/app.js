@@ -30,4 +30,4 @@ app.get('/', (req, res) => {
 app.use('/user', userRoutes);
 app.use("/captain", captainRoutes);
 
-module.exports = app;
+module.exports = app; 

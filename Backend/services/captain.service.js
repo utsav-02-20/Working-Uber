@@ -17,7 +17,8 @@ module.exports.register = async ({
     !vehicle?.color ||
     !vehicle?.plate ||
     !vehicle?.capacity ||
-    !vehicle?.vehicleType
+    !vehicle?.vehicleType ||
+    !vehicle?.vehicleModel 
   ) {
     throw new Error("Missing required fields");
   }

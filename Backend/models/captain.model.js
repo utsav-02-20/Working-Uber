@@ -77,6 +77,11 @@ const captainSchema = new mongoose.Schema(
         required: true,
         enum: ["car", "bike", "auto"],
       },
+      vehicleModel: {
+        type: String, 
+        require: true, 
+        minlength:[8 , "Enter valid Vehicle Model"],
+      },
     },
   },
   {
