@@ -6,7 +6,6 @@ const authMiddleware = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
-
 // ============================
 // Validation Rules for Captain Register
 // ============================
@@ -56,6 +55,13 @@ const registerValidators = [
   body("vehicle.vehicleType")
     .isIn(["car", "bike", "auto"])
     .withMessage("Vehicle type must be car, bike or auto"),
+
+  body("vehicle.vehicleModel")
+    .trim()
+    .notEmpty()
+    .withMessage("Vehicle model is required")
+    .isLength({ min: 3 })
+    .withMessage("Vehicle model must be at least 3 characters long"),
 ];
 
 // ============================
@@ -68,9 +74,7 @@ const loginValidators = [
     .withMessage("Please use a valid email address")
     .normalizeEmail(),
 
-  body("password")
-    .notEmpty()
-    .withMessage("Password is required"),
+  body("password").notEmpty().withMessage("Password is required"),
 ];
 
 // ============================
@@ -92,7 +96,7 @@ router.post("/login", loginValidators, captainController.loginCaptain);
 router.get(
   "/profile",
   authMiddleware.authCaptain,
-  captainController.getCaptainProfile
+  captainController.getCaptainProfile,
 );
 
 // ============================
@@ -102,7 +106,7 @@ router.get(
 router.post(
   "/logout",
   authMiddleware.authCaptain,
-  captainController.logoutCaptain
+  captainController.logoutCaptain,
 );
 
 module.exports = router;
